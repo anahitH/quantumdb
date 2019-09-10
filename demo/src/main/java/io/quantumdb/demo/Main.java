@@ -22,6 +22,7 @@ public class Main {
         private final String pass;
         private final String database;
         private final String catalog;
+        private final String tableName;
         private final boolean useQuantumDB;
     }
 
@@ -36,7 +37,7 @@ public class Main {
             new MigrationWithQuantumDB(config.url, config.catalog, config.user, config.pass).run();
         }
         else {
-            new MigrationWithDowntime(config.url, config.server, config.user, config.pass, config.database).run();
+            new MigrationWithDowntime(config.url, config.server, config.user, config.pass, config.database, config.tableName).run();
         }
     }
 
@@ -57,16 +58,18 @@ public class Main {
         String user = args[3];
         String pass = args[4];
         String database = args[5];
+        String tableName = args[6];
 
         checkArgument(!isNullOrEmpty(url), "You must specify a 'url'");
         checkArgument(!isNullOrEmpty(server), "You must specify a 'server'");
         checkArgument(!isNullOrEmpty(user), "You must specify a 'user'");
         checkArgument(!isNullOrEmpty(user), "You must specify a 'password'");
         checkArgument(!isNullOrEmpty(database), "You must specify a 'database'");
+        checkArgument(!isNullOrEmpty(tableName), "You must specify a 'table name'");
 
         String catalog = getCatalog(url, server, user, pass, database);
 
-        return new Config(url, server, user, pass, database, catalog, false);
+        return new Config(url, server, user, pass, database, catalog, tableName, false);
     }
 
 

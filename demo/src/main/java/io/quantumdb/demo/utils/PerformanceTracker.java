@@ -2,13 +2,13 @@ package io.quantumdb.demo.utils;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 
 public class PerformanceTracker {
@@ -17,89 +17,12 @@ public class PerformanceTracker {
         SELECT, UPDATE, INSERT, DELETE
     }
 
-    public static class ExecutionStats
-    {
-        private final Date startTime;
-        private final Date endTime;
-        private final Integer duration;
-        private final int rowsAffected;
-        private int threadNum;
-
-        public ExecutionStats(Date startTime, Date endTime, int rowsAffected)
-        {
-            this.rowsAffected = rowsAffected;
-            this.startTime = startTime;
-            this.endTime = endTime;
-            if (this.endTime != null) {
-                this.duration = Math.toIntExact(this.endTime.getTime() - this.startTime.getTime());
-            } else {
-                this.duration = -1;
-            }
-        }
-
-        public String toString()
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("(");
-            stringBuilder.append("Thread: ");
-            stringBuilder.append(this.threadNum);
-            stringBuilder.append("  rows affected: ");
-            stringBuilder.append(this.rowsAffected);
-            stringBuilder.append("  ");
-            stringBuilder.append(this.startTime.toString() + "\t");
-            if (this.endTime != null) {
-                stringBuilder.append(this.endTime.toString() + "\t");
-            } else {
-                stringBuilder.append("NULL \t\t\t");
-            }
-            stringBuilder.append(this.duration.toString());
-            stringBuilder.append(")");
-            return stringBuilder.toString();
-        }
-
-        public String toSimpleString()
-        {
-            return this.duration.toString();
-        }
-
-        public String toCSVEntry()
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            stringBuilder.append(sdf.format(this.startTime));
-            stringBuilder.append(",");
-            stringBuilder.append(this.duration);
-            return stringBuilder.toString();
-        }
-
-        public void setThreadNum(int threadNum) {
-            this.threadNum = threadNum;
-        }
-    }
-
-    private final List<ExecutionStats> inserts;
-    private final List<ExecutionStats> selects;
-    private final List<ExecutionStats> updates;
-    private final List<ExecutionStats> deletes;
-
-    private List<ExecutionStats> saved_inserts = new ArrayList<>();
-    private List<ExecutionStats> saved_selects = new ArrayList<>();
-    private List<ExecutionStats> saved_updates = new ArrayList<>();
-    private List<ExecutionStats> saved_deletes = new ArrayList<>();
-
-    public PerformanceTracker() {
-        this.inserts = Lists.newCopyOnWriteArrayList();
-        this.selects = Lists.newCopyOnWriteArrayList();
-        this.updates = Lists.newCopyOnWriteArrayList();
-        this.deletes = Lists.newCopyOnWriteArrayList();
-    }
+    private List<ExecutionStats> inserts = new ArrayList<>();
+    private List<ExecutionStats> selects = new ArrayList<>();
+    private List<ExecutionStats> updates = new ArrayList<>();
+    private List<ExecutionStats> deletes = new ArrayList<>();
 
     public void reset() {
-        saved_inserts.addAll(inserts);
-        saved_selects.addAll(selects);
-        saved_updates.addAll(updates);
-        saved_deletes.addAll(deletes);
-
         inserts.clear();
         selects.clear();
         updates.clear();
@@ -179,41 +102,155 @@ public class PerformanceTracker {
         return builder.toString();
     }
 
-    public void saveOutputToCSV(String filePrefix)
-    {
-        saveOutputToCSV(filePrefix + "_inserts.csv", this.saved_inserts);
-        saveOutputToCSV(filePrefix + "_selects.csv", this.saved_selects);
-        saveOutputToCSV(filePrefix + "_updates.csv", this.saved_updates);
-        saveOutputToCSV(filePrefix + "_deletes.csv", this.saved_deletes);
-        resetSavedExecutionTimes();
-    }
-
-    public void savePerformanceStatistics(String ddl, ExecutionStats ddlExecutionStats) {
-        if (ddlExecutionStats == null || ddlExecutionStats.startTime == null || ddlExecutionStats.endTime == null) {
+    public void savePerformanceStatistics(String ddl, List<ExecutionStats> ddlExecutionStats) {
+        if (ddlExecutionStats.isEmpty()) {
             System.out.println("Unable to dump statistics for " + ddl + ". Can not obtain the start and end times for the operation");
             resetSavedExecutionTimes();
             return;
         }
-        savePerformanceStatistics(ddl, ddlExecutionStats, "inserts", saved_inserts);
-        savePerformanceStatistics(ddl, ddlExecutionStats, "selects", saved_selects);
-        savePerformanceStatistics(ddl, ddlExecutionStats, "updates", saved_updates);
-        savePerformanceStatistics(ddl, ddlExecutionStats, "deletes", saved_deletes);
+        savePerformanceStatistics(ddl, ddlExecutionStats, "inserts", inserts);
+        savePerformanceStatistics(ddl, ddlExecutionStats, "selects", selects);
+        savePerformanceStatistics(ddl, ddlExecutionStats, "updates", updates);
+        savePerformanceStatistics(ddl, ddlExecutionStats, "deletes", deletes);
         resetSavedExecutionTimes();
     }
 
     private void resetSavedExecutionTimes() {
-        saved_inserts.clear();
-        saved_selects.clear();
-        saved_updates.clear();
-        saved_deletes.clear();
+        inserts.clear();
+        selects.clear();
+        updates.clear();
+        deletes.clear();
     }
 
-    private static void savePerformanceStatistics(String ddl, ExecutionStats ddlExecutionStats, String dmlName, List<ExecutionStats> saved_dml) {
+    private static void savePerformanceStatistics(String ddl, List<ExecutionStats> ddlExecutionStats, String dmlName, List<ExecutionStats> dmlExecutionStats) {
+        if (dmlExecutionStats.isEmpty()) {
+            return;
+        }
+        JSONObject jsonDoc = new JSONObject();
+        JSONObject ddlObj = new JSONObject();
+
+        JSONArray ddlExecutionTimes = new JSONArray();
+        ddlExecutionStats.forEach(exTime -> { if (exTime.isValidExecutionStat()) {
+            ddlExecutionTimes.add(exTime.duration);
+        }  });
+        final int invalidDdlExecutionTimes = ddlExecutionStats.size() - ddlExecutionTimes.size();
+        ddlObj.put("ddls", ddlExecutionTimes);
+
+        JSONArray dmlsBeforeDlls = new JSONArray();
+        dmlExecutionStats.forEach(dmlExTime -> {
+            if (dmlExTime.isValidExecutionStat() && isDmlBeforeDdls(dmlExTime, ddlExecutionStats)) {
+                dmlsBeforeDlls.add(dmlExTime.duration);
+
+            }});
+        ddlObj.put("DML_before_DDL", dmlsBeforeDlls);
+
+        JSONArray dmlsDuringDlls = new JSONArray();
+        HashSet<Integer> uniqueThreads = new HashSet();
+        dmlExecutionStats.forEach(dmlExTime -> {
+            if (dmlExTime.isValidExecutionStat() && isDmlDuringDdls(dmlExTime, ddlExecutionStats)) {
+                dmlsDuringDlls.add(dmlExTime.duration);
+                uniqueThreads.add(dmlExTime.threadNum);
+
+            }});
+        ddlObj.put("DML_during_DDL", dmlsDuringDlls);
+        ddlObj.put("Num_of_threads_during_ddl", uniqueThreads.size());
+
+        JSONArray dmlsAfterDlls = new JSONArray();
+        dmlExecutionStats.forEach(dmlExTime -> {
+            if (dmlExTime.isValidExecutionStat() && isDmlAfterDdls(dmlExTime, ddlExecutionStats)) {
+                dmlsAfterDlls.add(dmlExTime.duration);
+
+            }});
+        ddlObj.put("DML_after_DDL", dmlsAfterDlls);
+
+        jsonDoc.put(ddl, ddlObj);
+
+        try {
+            FileWriter fileWriter = new FileWriter(ddl + "_" + dmlName + ".json");
+            fileWriter.write(jsonDoc.toJSONString());
+            fileWriter.flush();
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean isDmlBeforeDdls(ExecutionStats dmlExTime, List<ExecutionStats> ddlExecutionStats) {
+        for (ExecutionStats ddlStats : ddlExecutionStats) {
+            if (isDmlBeforeDDl(dmlExTime, ddlStats))  {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isDmlDuringDdls(ExecutionStats dmlExTime, List<ExecutionStats> ddlExecutionStats) {
+        for (ExecutionStats ddlStats : ddlExecutionStats) {
+            if (isDmlDuringDDl(dmlExTime, ddlStats))  {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isDmlAfterDdls(ExecutionStats dmlExTime, List<ExecutionStats> ddlExecutionStats) {
+        for (ExecutionStats ddlStats : ddlExecutionStats) {
+            if (isDmlAfterDDl(dmlExTime, ddlStats))  {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isDmlBeforeDDl(ExecutionStats dmlExTime, ExecutionStats ddlStats) {
+        if (!dmlExTime.isValidExecutionStat() || !ddlStats.isValidExecutionStat()) {
+            return false;
+        }
+        if (dmlExTime.startTime.before(ddlStats.startTime)
+                && (dmlExTime.endTime.before(ddlStats.startTime) || dmlExTime.endTime.compareTo(ddlStats.startTime) == 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isDmlDuringDDl(ExecutionStats dmlExTime, ExecutionStats ddlStats) {
+        if (!dmlExTime.isValidExecutionStat() || !ddlStats.isValidExecutionStat()) {
+            return false;
+        }
+        if (((dmlExTime.startTime.before(ddlStats.startTime)
+                || dmlExTime.startTime.compareTo(ddlStats.startTime) == 0)  && dmlExTime.endTime.after(ddlStats.startTime))
+        || (dmlExTime.startTime.after(ddlStats.startTime)
+                && (dmlExTime.endTime.before(ddlStats.endTime) || dmlExTime.endTime.compareTo(ddlStats.endTime) == 0))
+        || ((dmlExTime.startTime.after(ddlStats.startTime) || dmlExTime.startTime.compareTo(ddlStats.startTime) == 0)
+                && dmlExTime.startTime.before(ddlStats.endTime))
+        || ((dmlExTime.startTime.compareTo(dmlExTime.endTime) == 0 && dmlExTime.startTime.compareTo(ddlStats.startTime) == 0)
+                || (dmlExTime.startTime.compareTo(dmlExTime.endTime) == 0 && dmlExTime.startTime.compareTo(ddlStats.endTime) == 0))) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isDmlAfterDDl(ExecutionStats dmlExTime, ExecutionStats ddlStats) {
+        if (!dmlExTime.isValidExecutionStat() || !ddlStats.isValidExecutionStat()) {
+            return false;
+        }
+        if ((dmlExTime.startTime.after(ddlStats.endTime) || dmlExTime.startTime.compareTo(ddlStats.endTime) == 0)
+                && dmlExTime.endTime.after(ddlStats.endTime))  {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+    private static void savePerformanceStatistics(String ddl, List<ExecutionStats> ddlExecutionStats, String dmlName, List<ExecutionStats> saved_dml) {
+        // At this point dump json file with all necessary info
+        // later process the json file with python script and dump more specific statistics
         if (saved_dml.isEmpty()) {
             System.out.println("No " + dmlName + " has been executed during DDL " + ddl);
             return;
         }
         try {
+
             FileWriter statisticsFile = new FileWriter("stats.txt", true);
             FileWriter dmlStatisticsFile = new FileWriter(ddl + "_" + dmlName + ".txt");
             Integer beforeDDLMean = 0;
@@ -308,7 +345,7 @@ public class PerformanceTracker {
             e.printStackTrace();
         }
     }
-
+*/
     private static void dumpStatisticsToFile(FileWriter statsFile, String dmlName, String ddl, ExecutionStats ddlExecutionStats, double beforeDdl, double duringDdl, double afterDdl,
                                              int beforeDDLCount, int duringDDLCount, int afterDDLCount, int rowsAffectedBefore, int rowsAffectedDuring, int rowsAffectedAfter,
                                              int threadsBefore, int threadsDuring, int threadsAfter, int skippedExecutionTimes) throws IOException {

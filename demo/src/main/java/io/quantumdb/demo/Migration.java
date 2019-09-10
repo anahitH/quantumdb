@@ -12,6 +12,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.quantumdb.demo.utils.PerformanceTracker;
 import io.quantumdb.demo.utils.UserUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public abstract class Migration {
     private final String user;
     private final String pass;
     private final String database;
+    private final String tableName;
 
     public abstract void run() throws InterruptedException, ClassNotFoundException, SQLException;
 
@@ -41,7 +43,7 @@ public abstract class Migration {
         //execute(connection, "CREATE SEQUENCE users_id_seq START WITH 0 INCREMENT BY 1");
 
         execute(connection, new StringBuilder()
-                .append("CREATE TABLE users_new (")
+                .append("CREATE TABLE " + this.tableName + " (")
                 .append("  id bigint NOT NULL DEFAULT (NEXT VALUE FOR users_id_seq), ")
                 .append("  name varchar(64) NOT NULL, ")
                 .append("  email varchar(255) NOT NULL, ")
@@ -65,9 +67,9 @@ public abstract class Migration {
         for (int i = 0; i < 500; i++) {
             executorService.submit(() -> {
                 try (Connection connection = createConnection()) {
-                    String query = "INSERT INTO dblocking_test (name, email) VALUES (?, ?)";
+                    String query = "INSERT INTO " + this.tableName + " (name, email) VALUES (?, ?)";
                     try (PreparedStatement statement = connection.prepareStatement(query)) {
-                        for (int j = 0; j < 70_000/*100_000*/; j++) {
+                        for (int j = 0; j < 30_000/*100_000*/; j++) {
                             String name = UserUtils.pickName(random);
                             String email = UserUtils.getEmail(name);
 
@@ -92,10 +94,10 @@ public abstract class Migration {
         executorService.awaitTermination(1, TimeUnit.HOURS);
     }
 
-    protected abstract void performSchemaChange(Connection connection) throws SQLException, InterruptedException;
+    protected abstract void performSchemaChange(Connection connection, PerformanceTracker.Type dmlType) throws SQLException, InterruptedException;
 
     protected void tearDown(Connection connection) throws SQLException {
-        execute(connection, "DROP TABLE IF EXISTS users cascade");
+        execute(connection, "DROP TABLE IF EXISTS " + this.tableName + " cascade");
     }
 
     protected void execute(Connection connection, String query) throws SQLException {

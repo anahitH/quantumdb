@@ -3,10 +3,12 @@ package io.quantumdb.demo.applications;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import io.quantumdb.demo.utils.ExecutionStats;
 import io.quantumdb.demo.utils.PerformanceTracker;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,8 @@ public abstract class Application {
     private final String database;
     private final String user;
     private final String pass;
+    private final String tableName;
+    private final PerformanceTracker.Type currentDml;
 
     private final PerformanceTracker tracker = new PerformanceTracker();
 
@@ -31,7 +35,7 @@ public abstract class Application {
     private Connection connection;
 
     public void run() throws SQLException {
-        tracker.reset();
+        //tracker.reset();
         connection = getConnection();
         executorService = new ScheduledThreadPoolExecutor(THREADS);
         for (int i = 0; i < THREADS; i++) {
@@ -54,7 +58,7 @@ public abstract class Application {
     public String getPerformance() {
         synchronized (tracker) {
             String output = tracker.generateSimplifiedOutput();
-            tracker.reset();
+            //tracker.reset();
             return output;
         }
     }
@@ -63,32 +67,49 @@ public abstract class Application {
     {
         synchronized (tracker) {
             String output = tracker.generateOutput();
-            tracker.reset();
+            //tracker.reset();
             return output;
         }
     }
-    abstract PerformanceTracker.ExecutionStats performInsert(Connection conn) throws SQLException;
+    abstract ExecutionStats performInsert(Connection conn) throws SQLException;
 
-    abstract PerformanceTracker.ExecutionStats performSelect(Connection conn) throws SQLException;
+    abstract ExecutionStats performSelect(Connection conn) throws SQLException;
 
-    abstract PerformanceTracker.ExecutionStats performUpdate(Connection conn) throws SQLException;
+    abstract ExecutionStats performUpdate(Connection conn) throws SQLException;
 
-    abstract PerformanceTracker.ExecutionStats performDelete(Connection conn) throws SQLException;
+    abstract ExecutionStats performDelete(Connection conn) throws SQLException;
 
     Runnable createDatabaseInteractor(Connection connection, int threadNum) {
         return () -> {
             try {
-                PerformanceTracker.ExecutionStats execStats = performInsert(connection);
+                ExecutionStats execStats = null;
+                switch (currentDml)
+                {
+                    case INSERT:
+                        execStats = performInsert(connection);
+                        break;
+                    case SELECT:
+                        execStats = performSelect(connection);
+                        break;
+                    case DELETE:
+                        execStats = performDelete(connection);
+                        break;
+                    case UPDATE:
+                        execStats = performUpdate(connection);
+                        break;
+                }
+                if (execStats != null) {
+                    execStats.setThreadNum(threadNum);
+                    synchronized (tracker) {
+                        tracker.registerDuration(this.currentDml, execStats);
+                    }
+                }
                 //PerformanceTracker.ExecutionStats execStats = performSelect(connection);
                 //PerformanceTracker.ExecutionStats execStats = performUpdate(connection);
                 //PerformanceTracker.ExecutionStats execStats = performDelete(connection);
-                execStats.setThreadNum(threadNum);
-                synchronized (tracker) {
-                    tracker.registerDuration(PerformanceTracker.Type.INSERT, execStats);
                     //tracker.registerDuration(PerformanceTracker.Type.SELECT, execStats);
                     //tracker.registerDuration(PerformanceTracker.Type.UPDATE, execStats);
                     //tracker.registerDuration(PerformanceTracker.Type.DELETE, execStats);
-                }
             }
             catch (SQLException e) {
                 log.error(e.getMessage(), e);
@@ -112,12 +133,7 @@ public abstract class Application {
         return null;
     }
 
-    public void savePerformanceAsCSV(String filePrefix)
-    {
-        tracker.saveOutputToCSV(filePrefix);
-    }
-
-    public void savePerformanceStatistics(String ddl, PerformanceTracker.ExecutionStats ddlExecutionStats) {
+    public void savePerformanceStatistics(String ddl, List<ExecutionStats> ddlExecutionStats) {
         tracker.savePerformanceStatistics(ddl, ddlExecutionStats);
     }
 }
