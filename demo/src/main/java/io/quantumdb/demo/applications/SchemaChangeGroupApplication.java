@@ -16,6 +16,13 @@ public class SchemaChangeGroupApplication extends SchemaChange {
     }
 
     @Override
+    public void prepareForDDLs(DDL_TYPE ddlOp) {
+        for (int i = 0; i < this.ddlNum; ++i) {
+            prepareForDDL(ddlOp);
+        }
+    }
+
+    @Override
     public List<ExecutionStats> runChange(DDL_TYPE ddlOp) {
         List<ExecutionStats> ddlExecutions = new ArrayList<>(ddlNum);
         for (int i = 0; i < this.ddlNum; ++i) {

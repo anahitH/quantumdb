@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import com.google.common.collect.Lists;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -130,10 +129,9 @@ public class PerformanceTracker {
         JSONObject ddlObj = new JSONObject();
 
         JSONArray ddlExecutionTimes = new JSONArray();
-        ddlExecutionStats.forEach(exTime -> { if (exTime.isValidExecutionStat()) {
+        ddlExecutionStats.forEach(exTime -> { if (exTime != null && exTime.isValidExecutionStat()) {
             ddlExecutionTimes.add(exTime.duration);
         }  });
-        final int invalidDdlExecutionTimes = ddlExecutionStats.size() - ddlExecutionTimes.size();
         ddlObj.put("ddls", ddlExecutionTimes);
 
         JSONArray dmlsBeforeDlls = new JSONArray();
@@ -163,7 +161,9 @@ public class PerformanceTracker {
             }});
         ddlObj.put("DML_after_DDL", dmlsAfterDlls);
 
-        jsonDoc.put(ddl, ddlObj);
+        JSONObject dmlObj = new JSONObject();
+        dmlObj.put(dmlName, ddlObj);
+        jsonDoc.put(ddl, dmlObj);
 
         try {
             FileWriter fileWriter = new FileWriter(ddl + "_" + dmlName + ".json");
@@ -173,6 +173,7 @@ public class PerformanceTracker {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println("DML ran during schema modification " + dmlsDuringDlls.size());
     }
 
     private static boolean isDmlBeforeDdls(ExecutionStats dmlExTime, List<ExecutionStats> ddlExecutionStats) {

@@ -53,20 +53,24 @@ public class MigrationWithDowntime extends Migration {
 
         //performDmls(connection);
         performSchemaChange(connection, PerformanceTracker.Type.SELECT);
-        //performSchemaChange(connection, PerformanceTracker.Type.INSERT);
-        //performSchemaChange(connection, PerformanceTracker.Type.UPDATE);
-        //performSchemaChange(connection, PerformanceTracker.Type.DELETE);
+        performSchemaChange(connection, PerformanceTracker.Type.INSERT);
+        performSchemaChange(connection, PerformanceTracker.Type.UPDATE);
+        performSchemaChange(connection, PerformanceTracker.Type.DELETE);
     }
 
 
     @Override
     protected void performSchemaChange(Connection connection, PerformanceTracker.Type dmlType) throws InterruptedException, SQLException {
         //SchemaChangeApplication schemaChange = new SchemaChangeApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName());
-        SchemaChangeGroupApplication schemaChange = new SchemaChangeGroupApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName(), 3);
-        for (int i = DDL_TYPE.ADD_COLUMN.getValue(); i < DDL_TYPE.DROP_COLUMN.getValue(); ++i) {
+        System.out.println("Starting DDL changes with dml " + dmlType.toString());
+        //SchemaChangeGroupApplication schemaChange = new SchemaChangeGroupApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName(), 2);
+        SchemaChangeGroupApplication schemaChange = new SchemaChangeGroupApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName(), 20);
+        //for (int i = DDL_TYPE.ADD_COLUMN_WITH_CONSTRAINT.getValue(); i < DDL_TYPE.RENAME_COLUMN.getValue(); ++i) {
+        for (int i = DDL_TYPE.MODIFY_COLUMN_INCREASE_STRING_DATATYPE.getValue(); i < DDL_TYPE.MODIFY_COLUMN_SHRINK_STRING_DATATYPE.getValue(); ++i) {
             DDL_TYPE ddlOp = DDL_TYPE.getDDLOp(i);
             System.out.println("Prepare for DDL " + DDL_TYPE.getDDLName(ddlOp) + " ...");
-            schemaChange.prepareForDDL(ddlOp);
+            schemaChange.prepareForDDLs(ddlOp);
+            TableConstants.resetUniqueNameIdGenerator();
             //sleep(5_000);
             log.info("Starting the application (version 1)...");
             System.out.println("Starting the application (version 1)...");

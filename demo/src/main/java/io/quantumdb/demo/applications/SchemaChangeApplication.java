@@ -21,6 +21,11 @@ public class SchemaChangeApplication extends SchemaChange {
     }
 
     @Override
+    public void prepareForDDLs(DDL_TYPE ddlOp) {
+        prepareForDDL(ddlOp);
+    }
+
+    @Override
     public List<ExecutionStats> runChange(DDL_TYPE ddlOp)
     {
         List<ExecutionStats> executionStats = new ArrayList<>(1);

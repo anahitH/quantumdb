@@ -1,0 +1,19 @@
+\begin{tabular}{lrrrrrrrrrr}
+\hline
+ AddColumn   &   ddl number &   ddl mean duration &   ddl median duration &   dml mean duration before ddls &   dml median duration before ddls &   dml mean duration during ddls &   dml median duration during ddls &   dml mean duration after ddls &   dml median duration after ddls &   number of executed dml threads \\
+\hline
+ deletes     &          100 &                 8.8 &                    15 &                            61.8 &                                 0 &                           177.9 &                               172 &                           59.1 &                                0 &                              100 \\
+ inserts     &          100 &                 6.6 &                     0 &                            76.6 &                                 0 &                           177.8 &                               156 &                           66.4 &                                0 &                              100 \\
+ selects     &          100 &                 3.9 &                     0 &                            51.7 &                                 0 &                            90.6 &                                78 &                           39.3 &                                0 &                              100 \\
+ updates     &          100 &                12.5 &                    15 &                            70.3 &                                 0 &                           294   &                               266 &                           71.6 &                                0 &                              100 \\
+\hline
+\end{tabular}\begin{tabular}{lrrrrrrrrrr}
+\hline
+ DropColumn   &   ddl number &   ddl mean duration &   ddl median duration &   dml mean duration before ddls &   dml median duration before ddls &   dml mean duration during ddls &   dml median duration during ddls &   dml mean duration after ddls &   dml median duration after ddls &   number of executed dml threads \\
+\hline
+ deletes      &          100 &                12.2 &                    11 &                            65.8 &                                 1 &                           424.6 &                             394   &                           64   &                                1 &                              100 \\
+ inserts      &          100 &                10.4 &                    10 &                            71.5 &                                 1 &                           259.7 &                             243   &                          108.8 &                                2 &                              100 \\
+ selects      &          100 &                 3   &                     2 &                            39.7 &                                 0 &                           151.5 &                             142.5 &                           31.7 &                                0 &                              100 \\
+ updates      &          100 &                11.2 &                    11 &                            65.7 &                                 1 &                           245   &                             240   &                           67.7 &                                1 &                              100 \\
+\hline
+\end{tabular}

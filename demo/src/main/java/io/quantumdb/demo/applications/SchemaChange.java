@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import io.quantumdb.demo.utils.PerformanceTracker;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,14 +39,34 @@ public abstract class SchemaChange {
     {
         switch (ddlOp)  {
         case ADD_COLUMN:
-            case ADD_COLUMN_WITH_CONSTRAINT:
-                execute(createDropColumnIfExistsStatement(TableConstants.getUniqueColumnNameWithNullDefaultValue()));
+            execute(createDropColumnIfExistsStatement(TableConstants.getUniqueColumnNameWithNullDefaultValue()));
+            break;
+        case ADD_COLUMN_WITH_CONSTRAINT:
+            String columnName = TableConstants.getUniqueColumnNameWithNullDefaultValue();
+            execute(createDropConstraintForColumnIfExistsStatement(columnName));
+            execute(createDropColumnIfExistsStatement(columnName));
             break;
         case DROP_COLUMN:
             execute(createColumnIfNotExistsStatement(TableConstants.getUniqueColumnNameWithNullDefaultValue(), "Bit", null));
             break;
-            case RENAME_COLUMN:
-            execute(createDropColumnIfExistsStatement(TableConstants.getUniqueRenamedColumnName()));
+        case RENAME_COLUMN:
+            columnName = TableConstants.getUniqueRenamedColumnName();
+            execute(createDropColumnIfExistsStatement(columnName));
+            TableConstants.resetUniqueNameIdGeneratorByStep(1);
+            columnName = TableConstants.getUniqueColumnNameWithNullDefaultValue();
+            execute(createColumnIfNotExistsStatement(columnName, "Bit", null));
+            break;
+        case MODIFY_COLUMN_INCREASE_STRING_DATATYPE:
+            String new_column_name = TableConstants.getUniqueName("name");
+            execute(createDropColumnIfExistsStatement(new_column_name));
+            execute(createColumnIfNotExistsStatement(new_column_name, "nvarchar (64)", null));
+            execute("update " + tableName + " set " + new_column_name + " = name");
+            break;
+        case MODIFY_COLUMN_SHRINK_STRING_DATATYPE:
+            new_column_name = TableConstants.getUniqueName("email");
+            execute(createDropColumnIfExistsStatement(new_column_name));
+            execute(createColumnIfNotExistsStatement(new_column_name, "nvarchar (255)", null));
+            execute("update " + tableName + " set " + new_column_name + " = email");
             break;
         case MODIFY_CONSTRAINT_COLUMN:
             execute(renameColumnStatement(TableConstants.getUniqueRenamedColumnName(), TableConstants.getUniqueColumnNameWithNullDefaultValue()));
@@ -99,8 +118,6 @@ public abstract class SchemaChange {
         case DROP_COLUMN_NVARCHAR_MAX_DEFAULT_NOT_NULL:
             //execute(createColumnIfNotExistsStatement(TableConstants.getUniqueColumnNameWithMaxCharTypeNonNullDefaultValue, "nvarchar(max)", "1"));
             break;
-        case MODIFY_COLUMN_INCREASE_STRING_DATATYPE:
-        case MODIFY_COLUMN_SHRINK_STRING_DATATYPE:
         case COPY_TABLE:
         case COPY_COLUMN_TO_SMALLER_DATATYPE:
         case RENAME_TABLE: // if this is the last operation, then there is no need to dp anything here. otherwise the following operations need to rename it back
@@ -111,6 +128,7 @@ public abstract class SchemaChange {
         }
     }
 
+    public abstract void prepareForDDLs(DDL_TYPE ddlOp);
     public abstract List<ExecutionStats> runChange(DDL_TYPE ddlOp);
 
     protected ExecutionStats runDDL(DDL_TYPE ddlOp)
@@ -128,11 +146,13 @@ public abstract class SchemaChange {
                 case ADD_COLUMN_WITH_CONSTRAINT:
                     return execute(createColumnStatement(TableConstants.getUniqueColumnNameWithNullDefaultValue(), "Bit", "0"));
                 case RENAME_COLUMN:
-                    return execute(renameColumnStatement(TableConstants.getUniqueColumnNameWithNullDefaultValue(), TableConstants.getUniqueRenamedColumnName()));
+                    String columnName = TableConstants.getUniqueColumnNameWithNullDefaultValue();
+                    TableConstants.resetUniqueNameIdGeneratorByStep(1);
+                    return execute(renameColumnStatement(columnName, TableConstants.getUniqueRenamedColumnName()));
                 case MODIFY_COLUMN_INCREASE_STRING_DATATYPE:
-                    return execute("ALTER TABLE " + tableName + " ALTER COLUMN name nvarchar(255) WITH (ONLINE = ON)");
+                    return execute("ALTER TABLE " + tableName + " ALTER COLUMN " + TableConstants.getUniqueName("name") + " nvarchar(255) WITH (ONLINE = ON)");
                 case MODIFY_COLUMN_SHRINK_STRING_DATATYPE:
-                    return execute("ALTER TABLE " + tableName + " ALTER COLUMN name nvarchar(64) WITH (ONLINE = ON)");
+                    return execute("ALTER TABLE " + tableName + " ALTER COLUMN " + TableConstants.getUniqueName("email") + " nvarchar(64) WITH (ONLINE = ON)");
 
                 case CREATE_IDX:
                     return execute(createIndexStatement(false, false));
@@ -362,7 +382,25 @@ public abstract class SchemaChange {
 
     private String createDropColumnIfExistsStatement(String columnName) {
         return "ALTER TABLE " + tableName + " DROP COLUMN IF EXISTS " + columnName;
+    }
 
+    private String createDropConstraintForColumnIfExistsStatement(String columnName) {
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append("declare @Command  nvarchar(1000)");
+        strBuilder.append("select @Command = 'ALTER TABLE " + this.tableName + " DROP CONSTRAINT ' + d.name");
+        strBuilder.append(System.lineSeparator());
+        strBuilder.append("from sys.tables t\n" +
+                "  join sys.default_constraints d on d.parent_object_id = t.object_id");
+        strBuilder.append(System.lineSeparator());
+        strBuilder.append("join sys.columns c on c.object_id = t.object_id and c.column_id = d.parent_column_id");
+        strBuilder.append(System.lineSeparator());
+        strBuilder.append("where t.name = '" + tableName + "'");
+        strBuilder.append(System.lineSeparator());
+        strBuilder.append("and t.schema_id = schema_id('dbo') ");
+        strBuilder.append("and c.name = '" + columnName + "'");
+        strBuilder.append(System.lineSeparator());
+        strBuilder.append("IF @Command <> '' execute (@Command)");
+        return strBuilder.toString();
     }
 
     private String createColumnStatement(String columnName, String datatype, String defaultValue) {

@@ -33,12 +33,12 @@ public class Main {
 
         Config config = parseParameters(args);
 
-        if (config.useQuantumDB) {
-            new MigrationWithQuantumDB(config.url, config.catalog, config.user, config.pass).run();
-        }
-        else {
-            new MigrationWithDowntime(config.url, config.server, config.user, config.pass, config.database, config.tableName).run();
-        }
+        //if (config.useQuantumDB) {
+        //    new MigrationWithQuantumDB(config.url, config.catalog, config.user, config.pass).run();
+        //}
+        //else {
+        new MigrationWithDowntime(config.url, config.server, config.user, config.pass, config.database, config.tableName).run();
+        //}
     }
 
     private static Config parseParameters(String[] args) throws SQLException {

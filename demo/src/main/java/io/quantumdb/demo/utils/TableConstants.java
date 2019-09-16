@@ -12,6 +12,13 @@ public class TableConstants {
         public static void reset() {
             id = 0;
         }
+
+        public static void resetByStep(int step) {
+            if (step > id) {
+                id = 0;
+            }
+            id = id - step;
+        }
     }
 
     public static final String COLUMN_NAME_WITH_NULL_DEFAULT_VALUE = "is_activated";
@@ -51,7 +58,14 @@ public class TableConstants {
         return INDEX_NAME + UniqueIdGenerator.next();
     }
 
+    public static String getUniqueName(String name) {
+        return name + UniqueIdGenerator.next();
+    }
     public static void resetUniqueNameIdGenerator() {
         UniqueIdGenerator.reset();
     }
+    public static void resetUniqueNameIdGeneratorByStep(int step) {
+        UniqueIdGenerator.resetByStep(step);
+     }
+
 }

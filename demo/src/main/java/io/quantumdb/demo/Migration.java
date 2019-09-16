@@ -69,7 +69,7 @@ public abstract class Migration {
                 try (Connection connection = createConnection()) {
                     String query = "INSERT INTO " + this.tableName + " (name, email) VALUES (?, ?)";
                     try (PreparedStatement statement = connection.prepareStatement(query)) {
-                        for (int j = 0; j < 30_000/*100_000*/; j++) {
+                        for (int j = 0; j < 60_000/*100_000*/; j++) {
                             String name = UserUtils.pickName(random);
                             String email = UserUtils.getEmail(name);
 

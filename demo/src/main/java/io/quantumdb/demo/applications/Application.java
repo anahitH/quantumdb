@@ -19,7 +19,7 @@ public abstract class Application {
 
 
     protected static final int TABLE_SIZE = 10_000_000;
-    private static final int THREADS = 8;
+    private static final int THREADS = 100;
 
     private final String url;
     private final String server;
