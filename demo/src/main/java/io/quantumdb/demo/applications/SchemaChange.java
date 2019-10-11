@@ -95,10 +95,10 @@ public abstract class SchemaChange {
             execute(createUniqueConstraintIfNotExistsStatement());
             break;
         case COPY_COLUMN_TO_THE_SAME_DATATYPE:
-            execute("Alter table " + tableName + " add name_copy nvarchar(64)");
+            execute("Alter table " + tableName + " add " + TableConstants.getUniqueNameColumnCopyName() + " nvarchar(64)");
             break;
         case COPY_COLUMN_TO_LARGER_DATATYPE:
-            execute("Alter table " + tableName + " add email_copy nvarchar(255)");
+            execute("Alter table " + tableName + " add " + TableConstants.getUniqueEmailColumnCopyName() + " nvarchar(255)");
             break;
         case ADD_COLUMN_DEFAULT_VALUE_NOT_NULL:
             execute(createDropColumnIfExistsStatement(TableConstants.getUniqueColumnNameWithNonNullDefaultValue()));
@@ -119,6 +119,8 @@ public abstract class SchemaChange {
             //execute(createColumnIfNotExistsStatement(TableConstants.getUniqueColumnNameWithMaxCharTypeNonNullDefaultValue, "nvarchar(max)", "1"));
             break;
         case COPY_TABLE:
+            execute("DROP TABLE IF EXISTS " + TableConstants.getUniqueTableCopyName());
+            break;
         case COPY_COLUMN_TO_SMALLER_DATATYPE:
         case RENAME_TABLE: // if this is the last operation, then there is no need to dp anything here. otherwise the following operations need to rename it back
         case CREATE_FULLTEXT_INDEX:
@@ -180,13 +182,13 @@ public abstract class SchemaChange {
                     return execute(dropUniqueConstraintStatement());
 
                 case COPY_TABLE:
-                    return execute("SELECT *  INTO users_copy FROM  " + tableName);
+                    return execute("SELECT *  INTO " + TableConstants.getUniqueTableCopyName() + " FROM  " + tableName);
                 case COPY_COLUMN_TO_THE_SAME_DATATYPE:
-                    return execute("update " + tableName + " set name_copy = name");
+                    return execute("update " + tableName + " set " + TableConstants.getUniqueNameColumnCopyName() + " = name");
                 case COPY_COLUMN_TO_SMALLER_DATATYPE:
-                    return execute("update " + tableName + " set name_copy = email");
+                    return execute("update " + tableName + " set " + TableConstants.getUniqueNameColumnCopyName() + " = email");
                 case COPY_COLUMN_TO_LARGER_DATATYPE:
-                    return execute("update " + tableName + " set email_copy = name");
+                    return execute("update " + tableName + " set " + TableConstants.getUniqueEmailColumnCopyName() + " = name");
                 case RENAME_TABLE:
                     return execute("EXEC sp_rename '" + tableName + "', 'users_renamed';");
 
@@ -256,7 +258,7 @@ public abstract class SchemaChange {
 
     private String createUniqueConstraintIfNotExistsStatement()  {
         StringBuilder createConstraintStr = new StringBuilder();
-        createConstraintStr.append("IF NOT EXISTS (SELECT name from sys.objects where name like \'C_user\')");
+        createConstraintStr.append("IF NOT EXISTS (SELECT name from sys.objects where name like \'" + TableConstants.getUniqueConstraintName() + "\')");
         createConstraintStr.append(System.lineSeparator());
         createConstraintStr.append(createUniqueConstraintStatement());
         return createConstraintStr.toString();
@@ -267,7 +269,7 @@ public abstract class SchemaChange {
         StringBuilder createConstraintStr = new StringBuilder();
         createConstraintStr.append("ALTER TABLE " + tableName);
         createConstraintStr.append(System.lineSeparator());
-        createConstraintStr.append("ADD CONSTRAINT C_user UNIQUE (id, name)");
+        createConstraintStr.append("ADD CONSTRAINT " + TableConstants.getUniqueConstraintName() + " UNIQUE (id, name)");
         return createConstraintStr.toString();
     }
 
@@ -275,7 +277,7 @@ public abstract class SchemaChange {
         StringBuilder dropConstraintStr = new StringBuilder();
         dropConstraintStr.append("ALTER TABLE " + tableName);
         dropConstraintStr.append(System.lineSeparator());
-        dropConstraintStr.append("DROP CONSTRAINT IF EXISTS C_user");
+        dropConstraintStr.append("DROP CONSTRAINT IF EXISTS " + TableConstants.getUniqueConstraintName());
         dropConstraintStr.append(System.lineSeparator());
         return dropConstraintStr.toString();
     }
@@ -285,7 +287,7 @@ public abstract class SchemaChange {
         StringBuilder dropConstraintStr = new StringBuilder();
         dropConstraintStr.append("ALTER TABLE " + tableName);
         dropConstraintStr.append(System.lineSeparator());
-        dropConstraintStr.append("DROP CONSTRAINT C_user");
+        dropConstraintStr.append("DROP CONSTRAINT " + TableConstants.getUniqueConstraintName());
         dropConstraintStr.append(System.lineSeparator());
         return dropConstraintStr.toString();
     }
@@ -295,6 +297,7 @@ public abstract class SchemaChange {
         createIndexStr.append("IF NOT EXISTS (SELECT name from sys.indexes where name = '");
         createIndexStr.append(TableConstants.getUniqueIndexName());
         createIndexStr.append("')");
+        TableConstants.resetUniqueNameIdGeneratorByStep(1);
         createIndexStr.append(createIndexStatement(false, isClustered));
         return createIndexStr.toString();
     }

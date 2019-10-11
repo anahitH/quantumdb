@@ -3,6 +3,8 @@ package io.quantumdb.demo;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -26,7 +28,7 @@ public class Main {
         private final boolean useQuantumDB;
     }
 
-    public static void main(String[] args) throws ClassNotFoundException, SQLException, InterruptedException {
+    public static void main(String[] args) throws ClassNotFoundException, SQLException, InterruptedException, IOException, URISyntaxException {
         //Class.forName("io.quantumdb.driver.Driver");
         //Class.forName("org.postgresql.Driver");
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");

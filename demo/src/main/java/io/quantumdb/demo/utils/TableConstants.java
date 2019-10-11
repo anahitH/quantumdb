@@ -27,6 +27,10 @@ public class TableConstants {
     public static final String COLUMN_NAME_WITH_MAX_NVARCHAR_TYPE_NON_NULL_DEFAULT_VALUE = "nvarchar_max_string_default_non_null";
     public static final String RENAMED_COLUMN_NAME = "renamed_is_activated";
     public static final String INDEX_NAME = "I_users1";
+    public static final String CONSTRAINT_NAME = "C_users";
+    public static final String TABLE_COPY_NAME = "users_copy";
+    public static final String NAME_COLUMN_COPY_NAME = "name_copy";
+    public static final String EMAIL_COLUMN_COPY_NAME = "email_copy";
 
     public static String getUniqueColumnNameWithNullDefaultValue()
     {
@@ -56,6 +60,20 @@ public class TableConstants {
     public static String getUniqueIndexName()
     {
         return INDEX_NAME + UniqueIdGenerator.next();
+    }
+
+    public static String getUniqueConstraintName()
+    {
+        return CONSTRAINT_NAME + UniqueIdGenerator.next();
+    }
+    public static String getUniqueTableCopyName() {
+        return TABLE_COPY_NAME + UniqueIdGenerator.next();
+    }
+    public static String getUniqueNameColumnCopyName() {
+        return NAME_COLUMN_COPY_NAME + UniqueIdGenerator.next();
+    }
+    public static String getUniqueEmailColumnCopyName() {
+        return EMAIL_COLUMN_COPY_NAME + UniqueIdGenerator.next();
     }
 
     public static String getUniqueName(String name) {

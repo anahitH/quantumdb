@@ -1,0 +1,1 @@
+{"DropClusteredIndex":{"deletes":{"Num_of_threads_during_ddl":3,"DML_before_DDL":[28066,43677,59100,15752,16204],"ddls":[21424],"DML_after_DDL":[15986,16141,17064],"DML_during_DDL":[16094,29692,202363,221459]}}}

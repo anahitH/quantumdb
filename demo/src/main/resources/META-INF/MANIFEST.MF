@@ -1,13 +1,14 @@
 Manifest-Version: 1.0
-Class-Path: intellij-facade-factory-0.5-11.1.3.jar mssql-jdbc-6.2.2.jr
- e8.jar mockito-core-1.9.5.jar jcl-over-slf4j-1.7.6.jar junit-4.11.jar
-  hamcrest-core-1.3.jar hamcrest-all-1.3.jar processor-core-0.5-11.1.3
- .jar jaxb-api-2.4.0-b180830.0359.jar guava-17.0.jar intellij-facade-1
- 0-0.5.jar slf4j-api-1.6.0.jar javax.inject-1.jar log4jdbc-1.2.jar aop
- alliance-1.0.jar logback-classic-1.1.2.jar logback-core-1.1.2.jar lom
- bok-1.18.8.jar objenesis-1.0.jar commons-lang-2.6.jar processor-api-0
- .5-11.1.3.jar lombok-plugin-0.5.jar jul-to-slf4j-1.7.6.jar guice-4.2.
- 2.jar intellij-facade-9-0.5.jar javax.activation-api-1.2.0.jar intell
- ij-facade-api-0.5-11.1.3.jar intellij-facade-11-0.5.jar
+Class-Path: jaxb-api-2.4.0-b180830.0359.jar jcl-over-slf4j-1.7.6.jar c
+ ommons-lang-2.6.jar processor-api-0.5-11.1.3.jar intellij-facade-11-0
+ .5.jar javax.inject-1.jar lombok-plugin-0.5.jar guava-17.0.jar jul-to
+ -slf4j-1.7.6.jar mssql-jdbc-6.2.2.jre8.jar processor-core-0.5-11.1.3.
+ jar hamcrest-core-1.3.jar slf4j-api-1.6.0.jar intellij-facade-9-0.5.j
+ ar json-simple-1.1.1.jar intellij-facade-api-0.5-11.1.3.jar logback-c
+ lassic-1.1.2.jar log4jdbc-1.2.jar junit-4.11.jar logback-core-1.1.2.j
+ ar mockito-core-1.9.5.jar guice-4.2.2.jar objenesis-1.0.jar intellij-
+ facade-factory-0.5-11.1.3.jar aopalliance-1.0.jar lombok-1.18.8.jar j
+ avax.activation-api-1.2.0.jar hamcrest-all-1.3.jar intellij-facade-10
+ -0.5.jar
 Main-Class: io.quantumdb.demo.Main
 

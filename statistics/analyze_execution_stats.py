@@ -2,7 +2,10 @@ import os
 import json
 from ddl_stats import ddl_stats
 
-EXEC_STATS_DIR = "C:\\Users\\anhayrap\\Desktop\\quantumdb"
+#EXEC_STATS_DIR = "C:\\Users\\anhayrap\\Desktop\\quantumdb"
+#EXEC_STATS_DIR= "C:\\Users\\anhayrap\\Desktop\\quantumdb\\out\\artifacts\\results"
+#EXEC_STATS_DIR= "C:\\Users\\anhayrap\\Desktop\\quantumdb\\out\\artifacts\\clustered_indexes"
+EXEC_STATS_DIR= "C:\\Users\\anhayrap\\Desktop\\quantumdb\\out\\artifacts\\create_idx"
 TEX_OUT_FOLDER = "C:\\Users\\anhayrap\\Desktop\\quantumdb\\statistics"
 TEX_TABLES_FILE_NAME = "dblocking.tex"
 

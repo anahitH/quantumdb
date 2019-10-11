@@ -2,6 +2,8 @@ package io.quantumdb.demo;
 
 import static java.lang.Thread.sleep;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -24,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 public class MigrationWithDowntime extends Migration {
 
-    public static void main(String[] args) throws InterruptedException, SQLException, ClassNotFoundException {
+    public static void main(String[] args) throws InterruptedException, SQLException, ClassNotFoundException, IOException, URISyntaxException {
         String url = System.getProperty("url");
         String server = System.getProperty("server");
         String user = System.getProperty("user");
@@ -42,20 +44,22 @@ public class MigrationWithDowntime extends Migration {
         super(url, server, user, pass, database, tableName);
     }
 
-    public void run() throws InterruptedException, ClassNotFoundException, SQLException {
+    public void run() throws InterruptedException, ClassNotFoundException, SQLException, IOException, URISyntaxException {
         Connection connection = createConnection();
 
         log.info("Setting up database for demo...");
         System.out.println("Setting up database for demo...");
         //createUserTable(connection);
+        //createUserTableWithLOBColumn(connection);
         //fillUserTable();
+        fillUsersFullTextIndexTable();
         //createBackupUserTable(connection);
 
         //performDmls(connection);
-        performSchemaChange(connection, PerformanceTracker.Type.SELECT);
-        performSchemaChange(connection, PerformanceTracker.Type.INSERT);
-        performSchemaChange(connection, PerformanceTracker.Type.UPDATE);
-        performSchemaChange(connection, PerformanceTracker.Type.DELETE);
+        //performSchemaChange(connection, PerformanceTracker.Type.SELECT);
+        //performSchemaChange(connection, PerformanceTracker.Type.INSERT);
+        //performSchemaChange(connection, PerformanceTracker.Type.UPDATE);
+        //performSchemaChange(connection, PerformanceTracker.Type.DELETE);
     }
 
 
@@ -64,9 +68,11 @@ public class MigrationWithDowntime extends Migration {
         //SchemaChangeApplication schemaChange = new SchemaChangeApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName());
         System.out.println("Starting DDL changes with dml " + dmlType.toString());
         //SchemaChangeGroupApplication schemaChange = new SchemaChangeGroupApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName(), 2);
-        SchemaChangeGroupApplication schemaChange = new SchemaChangeGroupApplication(getUrl(), getServer(), getDatabase(), getUser(), getPass(), this.getTableName(), 20);
+        SchemaChangeGroupApplication schemaChange =
+                new SchemaChangeGroupApplication(getUrl(), getServer(), getDatabase(), getUser(),
+                                                 getPass(), this.getTableName(), 1);
         //for (int i = DDL_TYPE.ADD_COLUMN_WITH_CONSTRAINT.getValue(); i < DDL_TYPE.RENAME_COLUMN.getValue(); ++i) {
-        for (int i = DDL_TYPE.MODIFY_COLUMN_INCREASE_STRING_DATATYPE.getValue(); i < DDL_TYPE.MODIFY_COLUMN_SHRINK_STRING_DATATYPE.getValue(); ++i) {
+        for (int i = DDL_TYPE.CREATE_IDX.getValue(); i < DDL_TYPE.CREATE_IDX_ONLINE.getValue(); ++i) {
             DDL_TYPE ddlOp = DDL_TYPE.getDDLOp(i);
             System.out.println("Prepare for DDL " + DDL_TYPE.getDDLName(ddlOp) + " ...");
             schemaChange.prepareForDDLs(ddlOp);

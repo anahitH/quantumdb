@@ -70,7 +70,7 @@ public enum DDL_TYPE {
 
                 //enumToInt.add(MODIFY_CONSTRAINT_COLUMN.getValue(), MODIFY_CONSTRAINT_COLUMN);
                 enumToInt.add(CREATE_IDX.getValue(), CREATE_IDX);
-                enumToInt.add(CREATE_IDX_ONLINE.getValue(), CREATE_IDX);
+                enumToInt.add(CREATE_IDX_ONLINE.getValue(), CREATE_IDX_ONLINE);
                 enumToInt.add(REBUILD_IDX.getValue(), REBUILD_IDX);
                 enumToInt.add(REBUILD_IDX_ONLINE.getValue(), REBUILD_IDX_ONLINE);
                 enumToInt.add(DROP_IDX.getValue(), DROP_IDX);
@@ -132,7 +132,7 @@ public enum DDL_TYPE {
                 case REBUILD_IDX:
                     return "RebuildIndex";
                 case REBUILD_IDX_ONLINE:
-                    return "RebuildIndexOffline";
+                    return "RebuildIndexOnline";
                 case DROP_IDX:
                     return "DropIndex";
                 case ADD_CLUSTERED_INDEX:
